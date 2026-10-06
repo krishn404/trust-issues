@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Trust Issues",
-  description: "An interactive 3D character viewer",
+  description: "Extern",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

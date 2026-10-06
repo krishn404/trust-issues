@@ -1,0 +1,7 @@
+.root {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(to top, #d5feff, #3c70a0, #3a416d, #210a12);
+}
