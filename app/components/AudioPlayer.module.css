@@ -24,11 +24,13 @@
     flex-shrink: 0;
     width: 5rem;
     height: 5rem;
-    border-radius: 1.05rem;
+    border-radius: 15px;
+    border: 2px solid #d5feff;
     object-fit: cover;
     background: #111;
     box-shadow: 0 0.4rem 1.1rem rgba(0, 0, 0, 0.35);
   }
+  
   
   .info {
     display: flex;
