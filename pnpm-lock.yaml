@@ -36,6 +36,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.1.9
         version: 19.3.0(@types/react@19.3.0)
+      '@types/three':
+        specifier: ^0.186.0
+        version: 0.186.0
       typescript:
         specifier: ^5.9.2
         version: 5.9.3
