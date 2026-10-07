@@ -18,17 +18,13 @@ function Flare({ edge, open }: { edge: "top" | "bottom"; open: boolean }) {
   const isTop = edge === "top";
   return (
     <motion.span
+      className="pointer-events-none absolute right-0 h-[30px] w-[30px]"
       aria-hidden
       initial={false}
       animate={{ scale: open ? 1 : 0.4 }}
       transition={spring}
       style={{
-        position: "absolute",
-        right: 0,
         [edge]: -R,
-        width: R,
-        height: R,
-        pointerEvents: "none",
         transformOrigin: isTop ? "bottom right" : "top right",
         background: `radial-gradient(circle at 0 ${isTop ? "0" : "100%"}, transparent ${R - 0.5}px, #000 ${R}px)`,
       }}
@@ -94,71 +90,23 @@ function GlassSlider({ label, value, min, max, step, format, onChange }: GlassSl
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
       onKeyDown={onKeyDown}
-      style={{
-        position: "relative",
-        height: 54,
-        flexShrink: 0,
-        borderRadius: 16,
-        background: "rgba(255,255,255,0.07)",
-        border: "1px solid rgba(255,255,255,0.06)",
-        overflow: "hidden",
-        cursor: dragging ? "grabbing" : "grab",
-        touchAction: "none",
-        userSelect: "none",
-        outline: "none",
-      }}
+      className={`relative h-[54px] shrink-0 overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.07] touch-none select-none outline-none ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
     >
       <div
-        style={{
-          position: "absolute",
-          top: 0,
-          bottom: 0,
-          left: 0,
-          width: `${pct}%`,
-          borderRadius: 16,
-          background: "rgba(255,255,255,0.2)",
-          pointerEvents: "none",
-        }}
+        className="pointer-events-none absolute inset-y-0 left-0 rounded-2xl bg-white/20"
+        style={{ width: `${pct}%` }}
       />
       <span
-        style={{
-          position: "absolute",
-          top: "50%",
-          left: `max(18px, calc(${pct}% - 18px))`,
-          width: 2,
-          height: 22,
-          borderRadius: 2,
-          transform: "translateY(-50%)",
-          background: "rgba(255,255,255,0.85)",
-          pointerEvents: "none",
-        }}
+        className="pointer-events-none absolute top-1/2 h-[22px] w-0.5 -translate-y-1/2 rounded-sm bg-white/85"
+        style={{ left: `max(18px, calc(${pct}% - 18px))` }}
       />
       <span
-        style={{
-          position: "absolute",
-          top: "50%",
-          left: 32,
-          transform: "translateY(-50%)",
-          fontSize: 15,
-          fontWeight: 500,
-          color: "rgba(255,255,255,0.8)",
-          pointerEvents: "none",
-        }}
+        className="pointer-events-none absolute left-8 top-1/2 -translate-y-1/2 text-[15px] font-medium text-white/80"
       >
         {label}
       </span>
       <span
-        style={{
-          position: "absolute",
-          top: "50%",
-          right: 18,
-          transform: "translateY(-50%)",
-          fontSize: 15,
-          fontWeight: 500,
-          color: "#fff",
-          fontVariantNumeric: "tabular-nums",
-          pointerEvents: "none",
-        }}
+        className="pointer-events-none absolute right-[18px] top-1/2 -translate-y-1/2 text-[15px] font-medium tabular-nums text-white"
       >
         {format ? format(value) : value}
       </span>
@@ -182,31 +130,13 @@ export default function ControlPanel({ settings, onChange }: ControlPanelProps) 
 
   return (
     <motion.aside
-      className={`control-panel${isPanelOpen ? " is-open" : ""}`}
+      className="fixed bottom-0 top-0 right-[var(--frame)] left-auto z-[9999] my-auto block p-0"
       aria-label="Scene controls"
       initial={false}
       animate={{ width: target.width, height: target.height }}
       transition={spring}
       onMouseEnter={openPanel}
       onMouseLeave={closePanel}
-      style={{
-        position: "fixed",
-        top: 0,
-        bottom: 0,
-        right: "var(--frame, 0px)",
-        left: "auto",
-        margin: "auto 0",
-        transform: "none",
-        display: "block",
-        opacity: 1,
-        visibility: "visible",
-        padding: 0,
-        border: 0,
-        background: "transparent",
-        boxShadow: "none",
-        backdropFilter: "none",
-        zIndex: 9999,
-      }}
     >
       <Flare edge="top" open={isPanelOpen} />
       <Flare edge="bottom" open={isPanelOpen} />
@@ -214,63 +144,25 @@ export default function ControlPanel({ settings, onChange }: ControlPanelProps) 
         initial={false}
         animate={{ borderRadius: target.radius }}
         transition={spring}
-        style={{
-          position: "relative",
-          width: "100%",
-          height: "100%",
-          background: "#000",
-          overflow: "hidden",
-          boxShadow: isPanelOpen
-            ? "0 24px 80px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.1)"
-            : "0 0 18px rgba(255,255,255,0.18), inset 0 0 0 1px rgba(255,255,255,0.22)",
-        }}
+        className={`relative h-full w-full overflow-hidden bg-black ${isPanelOpen ? "shadow-[0_24px_80px_rgba(0,0,0,0.55),inset_0_0_0_1px_rgba(255,255,255,0.1)]" : "shadow-[0_0_18px_rgba(255,255,255,0.18),inset_0_0_0_1px_rgba(255,255,255,0.22)]"}`}
       >
         <button
           type="button"
           aria-label={isPanelOpen ? "Close scene controls" : "Open scene controls"}
           aria-expanded={isPanelOpen}
           onClick={() => setIsPanelOpen((open) => !open)}
-          style={{
-            position: "absolute",
-            inset: 0,
-            display: "grid",
-            placeItems: "center",
-            background: "transparent",
-            border: 0,
-            padding: 0,
-            cursor: "pointer",
-            opacity: isPanelOpen ? 0 : 1,
-            pointerEvents: isPanelOpen ? "none" : "auto",
-            transition: "opacity 0.15s ease",
-          }}
+          className={`absolute inset-0 grid place-items-center border-0 bg-transparent p-0 transition-opacity duration-150 ${isPanelOpen ? "pointer-events-none opacity-0" : "cursor-pointer opacity-100"}`}
         >
-          <span style={{ width: 4, height: 34, borderRadius: 999, background: "rgba(255,255,255,0.7)" }} />
+          <span className="h-[34px] w-1 rounded-full bg-white/70" />
         </button>
 
         <div
-          className={`panel-content${isPanelOpen ? "" : " is-hidden"}`}
+          className={`flex h-full w-[366px] min-w-[366px] flex-col gap-2.5 overflow-y-auto p-[28px_24px_28px_28px] [scrollbar-width:none] ${isPanelOpen ? "opacity-100 blur-0 transition-[opacity,filter] delay-[120ms] duration-[280ms] ease-in" : "opacity-0 blur-[6px] transition-[opacity,filter] duration-[120ms] ease-in"}`}
           inert={!isPanelOpen}
-          style={{
-            width: OPEN.width,
-            minWidth: OPEN.width,
-            height: "100%",
-            boxSizing: "border-box",
-            padding: "28px 24px 28px 28px",
-            overflowY: "auto",
-            scrollbarWidth: "none",
-            display: "flex",
-            flexDirection: "column",
-            gap: 10,
-            opacity: isPanelOpen ? 1 : 0,
-            filter: isPanelOpen ? "blur(0px)" : "blur(6px)",
-            transition: isPanelOpen
-              ? "opacity 0.28s ease 0.12s, filter 0.28s ease 0.12s"
-              : "opacity 0.12s ease, filter 0.12s ease",
-          }}
         >
-          <div style={{ marginBottom: 6 }}>
-            <p className="panel-eyebrow" style={{ margin: "0 0 6px" }}>Scene controls</p>
-            <h1 style={{ margin: 0 }}>Fine tune</h1>
+          <div className="mb-1.5">
+            <p className="mb-1.5 text-[0.58rem] font-bold uppercase tracking-[0.14em] text-white/70">Scene controls</p>
+            <h1 className="m-0 text-[1.35rem] font-semibold tracking-[-0.035em] text-white">Fine tune</h1>
           </div>
 
           <GlassSlider label="Motion speed" value={settings.motionSpeed} min={0} max={2} step={0.05} format={(v) => `${v.toFixed(2)}×`} onChange={(v) => onChange("motionSpeed", v)} />
@@ -279,47 +171,51 @@ export default function ControlPanel({ settings, onChange }: ControlPanelProps) 
           <GlassSlider label="Fill light" value={settings.fillLight} min={0} max={4} step={0.1} format={(v) => v.toFixed(1)} onChange={(v) => onChange("fillLight", v)} />
           <GlassSlider label="Environment" value={settings.environmentLight} min={0} max={2} step={0.05} format={(v) => v.toFixed(2)} onChange={(v) => onChange("environmentLight", v)} />
 
+          <p className="mb-0 ml-1 mr-0 mt-[14px] text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50">
+            Cinematic lighting
+          </p>
+          <GlassSlider label="Cool light" value={settings.cinematicLight} min={0} max={2} step={0.05} format={(v) => `${Math.round(v * 100)}%`} onChange={(v) => onChange("cinematicLight", v)} />
+          <GlassSlider label="Exposure" value={settings.cinematicExposure} min={0.7} max={1.8} step={0.05} format={(v) => v.toFixed(2)} onChange={(v) => onChange("cinematicExposure", v)} />
+          <GlassSlider label="Light angle" value={settings.lightAngle} min={-90} max={90} step={1} format={(v) => `${v}°`} onChange={(v) => onChange("lightAngle", v)} />
+          <GlassSlider label="Light softness" value={settings.lightSoftness} min={0} max={1} step={0.05} format={(v) => `${Math.round(v * 100)}%`} onChange={(v) => onChange("lightSoftness", v)} />
+          <GlassSlider label="Surface sheen" value={settings.surfaceSheen} min={0} max={1} step={0.05} format={(v) => `${Math.round(v * 100)}%`} onChange={(v) => onChange("surfaceSheen", v)} />
+          <GlassSlider label="Soft glow" value={settings.surfaceGlow} min={0} max={0.6} step={0.02} format={(v) => `${Math.round(v * 100)}%`} onChange={(v) => onChange("surfaceGlow", v)} />
+          <label className="flex h-[54px] shrink-0 items-center justify-between rounded-2xl border border-white/[0.06] bg-white/[0.07] py-0 pl-8 pr-[18px] text-[15px] font-medium text-white/80">
+            Blend mode
+            <select
+              aria-label="Cinematic light blend mode"
+              value={settings.lightBlendMode}
+              onChange={(event) => onChange("lightBlendMode", event.target.value as SceneSettings["lightBlendMode"])}
+              className="cursor-pointer appearance-none bg-transparent text-right text-[13px] font-medium text-white outline-none"
+            >
+              <option value="normal" className="bg-[#11172d]">Normal</option>
+              <option value="screen" className="bg-[#11172d]">Screen</option>
+              <option value="overlay" className="bg-[#11172d]">Overlay</option>
+              <option value="soft-light" className="bg-[#11172d]">Soft light</option>
+              <option value="color-dodge" className="bg-[#11172d]">Color dodge</option>
+            </select>
+          </label>
+
           <button
             type="button"
             aria-pressed={settings.shadows}
             onClick={() => onChange("shadows", !settings.shadows)}
-            style={{
-              position: "relative",
-              height: 54,
-              flexShrink: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "0 18px 0 32px",
-              borderRadius: 16,
-              background: "rgba(255,255,255,0.07)",
-              border: "1px solid rgba(255,255,255,0.06)",
-              color: "rgba(255,255,255,0.8)",
-              fontSize: 15,
-              fontWeight: 500,
-              cursor: "pointer",
-              textAlign: "left",
-            }}
+            className="relative flex h-[54px] shrink-0 items-center justify-between rounded-2xl border border-white/[0.06] bg-white/[0.07] py-0 pl-8 pr-[18px] text-left text-[15px] font-medium text-white/80"
           >
             <span>Shadows</span>
-            <span style={{ color: "#fff" }}>{settings.shadows ? "On" : "Off"}</span>
+            <span className="text-white">{settings.shadows ? "On" : "Off"}</span>
           </button>
 
           <p
-            style={{
-              margin: "14px 0 2px 4px",
-              fontSize: 11,
-              fontWeight: 600,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              color: "rgba(255,255,255,0.5)",
-            }}
+            className="mb-0 ml-1 mr-0 mt-[14px] text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50"
           >
             Model placement
           </p>
           <GlassSlider label="X axis" value={settings.modelX} min={-2} max={2} step={0.1} format={(v) => v.toFixed(1)} onChange={(v) => onChange("modelX", v)} />
           <GlassSlider label="Y axis" value={settings.modelY} min={-2} max={2} step={0.1} format={(v) => v.toFixed(1)} onChange={(v) => onChange("modelY", v)} />
           <GlassSlider label="Z axis" value={settings.modelZ} min={-2} max={2} step={0.1} format={(v) => v.toFixed(1)} onChange={(v) => onChange("modelZ", v)} />
+          <GlassSlider label="Forward tilt" value={settings.tiltX} min={-45} max={45} step={1} format={(v) => `${v}°`} onChange={(v) => onChange("tiltX", v)} />
+          <GlassSlider label="Side tilt" value={settings.tiltZ} min={-45} max={45} step={1} format={(v) => `${v}°`} onChange={(v) => onChange("tiltZ", v)} />
         </div>
       </motion.div>
     </motion.aside>

@@ -2,7 +2,6 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
-import styles from "./AudioPlayer.module.css";
 
 type AudioPlayerProps = {
   title?: string;
@@ -101,7 +100,7 @@ export default function AudioPlayer({
 
   return (
     <motion.section
-      className={styles.root}
+      className="absolute inset-x-0 bottom-[calc(var(--frame,0px)+1.25rem)] z-[3] mx-auto flex w-[min(23rem,calc(100%-2rem))] select-none items-center gap-[0.85rem] rounded-[1.6rem] border border-white/30 bg-[linear-gradient(145deg,rgba(48,62,118,0.46),rgba(22,28,66,0.55))] py-[0.7rem] pl-[0.7rem] pr-4 text-white [backdrop-filter:blur(26px)_saturate(160%)] [-webkit-backdrop-filter:blur(26px)_saturate(160%)] [will-change:transform] max-[600px]:bottom-[calc(var(--frame,0px)+0.9rem)]"
       aria-label="Audio player"
       variants={cardVariants}
       initial={{ opacity: 0, y: 32, scale: 0.94 }}
@@ -127,7 +126,7 @@ export default function AudioPlayer({
       />
 
       <motion.img
-        className={styles.cover}
+        className="h-20 w-20 shrink-0 rounded-[15px] border-2 border-[#d5feff] bg-[#111] object-cover shadow-[0_0.4rem_1.1rem_rgba(0,0,0,0.35)]"
         src={cover}
         alt={`${title} cover art`}
         draggable={false}
@@ -135,19 +134,19 @@ export default function AudioPlayer({
         transition={spring}
       />
 
-      <div className={styles.info}>
-        <p className={styles.title}>{title}</p>
-        <p className={styles.artist}>
-          <a href={artistUrl} target="_blank" rel="noopener noreferrer" className={styles.artistLink}>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <p className="overflow-hidden whitespace-nowrap text-ellipsis text-[0.98rem] font-semibold leading-[1.2] tracking-[-0.015em]">{title}</p>
+        <p className="overflow-hidden whitespace-nowrap text-ellipsis text-[0.82rem] font-medium leading-[1.25] text-white/60">
+          <a href={artistUrl} target="_blank" rel="noopener noreferrer" className="text-inherit transition-colors duration-200 hover:text-white hover:underline hover:underline-offset-[3px]">
             {artist}
           </a>
         </p>
 
-        <div className={styles.progress}>
-          <span className={styles.time}>{formatTime(current)}</span>
+        <div className="mt-[0.4rem] flex items-center gap-[0.45rem]">
+          <span className="min-w-[1.9rem] text-[0.64rem] tabular-nums text-white/60">{formatTime(current)}</span>
           <div
             ref={trackRef}
-            className={styles.track}
+            className="group relative flex h-4 flex-1 cursor-pointer touch-none items-center outline-none"
             data-dragging={dragging}
             role="slider"
             tabIndex={0}
@@ -161,20 +160,20 @@ export default function AudioPlayer({
             onPointerCancel={onPointerUp}
             onKeyDown={onKeyDown}
           >
-            <div className={styles.rail}>
+            <div className="h-1 w-full overflow-hidden rounded-full bg-white/30 transition-[height] duration-[320ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] group-hover:h-[0.42rem] group-data-[dragging=true]:h-[0.42rem] group-focus-visible:h-[0.42rem]">
               <div
-                className={styles.fill}
+                className="h-full rounded-full bg-white"
                 style={{ width: `${progress}%`, transition: dragging ? "none" : "width 260ms linear" }}
               />
             </div>
           </div>
-          <span className={styles.time}>-{formatTime(duration - current)}</span>
+          <span className="min-w-[1.9rem] text-right text-[0.64rem] tabular-nums text-white/60">-{formatTime(duration - current)}</span>
         </div>
 
-        <div className={styles.controls}>
+        <div className="mt-[0.1rem] flex items-center justify-around px-[0.7rem]">
           <motion.button
             type="button"
-            className={`${styles.btn} ${styles.skip}`}
+            className="grid h-[1.4rem] w-[1.9rem] place-items-center border-0 bg-transparent p-[0.2rem] text-white outline-none focus-visible:rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70"
             aria-label={`Back ${SKIP_SECONDS} seconds`}
             onClick={() => seekTo(current - SKIP_SECONDS)}
             whileHover={{ scale: 1.12 }}
@@ -189,7 +188,7 @@ export default function AudioPlayer({
 
           <motion.button
             type="button"
-            className={`${styles.btn} ${styles.play}`}
+            className="grid h-[1.6rem] w-6 place-items-center border-0 bg-transparent p-[0.2rem] text-white outline-none focus-visible:rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70"
             aria-label={playing ? "Pause" : "Play"}
             onClick={toggle}
             whileHover={{ scale: 1.12 }}
@@ -199,7 +198,7 @@ export default function AudioPlayer({
             <AnimatePresence mode="wait" initial={false}>
               <motion.span
                 key={playing ? "pause" : "play"}
-                className={styles.icon}
+                className="grid h-full w-full place-items-center"
                 initial={{ opacity: 0, scale: 0.55 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.55 }}
@@ -221,7 +220,7 @@ export default function AudioPlayer({
 
           <motion.button
             type="button"
-            className={`${styles.btn} ${styles.skip}`}
+            className="grid h-[1.4rem] w-[1.9rem] place-items-center border-0 bg-transparent p-[0.2rem] text-white outline-none focus-visible:rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70"
             aria-label={`Forward ${SKIP_SECONDS} seconds`}
             onClick={() => seekTo(current + SKIP_SECONDS)}
             whileHover={{ scale: 1.12 }}
