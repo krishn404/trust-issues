@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { isFirstPlayThisSession, track } from "../../lib/track";
 
 type AudioPlayerProps = {
   title?: string;
@@ -57,11 +58,24 @@ export default function AudioPlayer({
 
   const progress = duration > 0 ? (current / duration) * 100 : 0;
 
+  const listenProgress = (audio: HTMLAudioElement) => {
+    if (!audio.duration || !Number.isFinite(audio.duration)) return 0;
+    return audio.currentTime / audio.duration;
+  };
+
   const toggle = () => {
     const audio = audioRef.current;
     if (!audio) return;
-    if (audio.paused) audio.play().catch(() => {});
-    else audio.pause();
+    if (audio.paused) {
+      void audio.play().then(() => {
+        if (isFirstPlayThisSession()) {
+          track({ type: "play", trackId: title, progress: listenProgress(audio) });
+        }
+      }).catch(() => {});
+    } else {
+      track({ type: "pause", trackId: title, progress: listenProgress(audio) });
+      audio.pause();
+    }
   };
 
   const seekTo = (time: number) => {
@@ -120,6 +134,8 @@ export default function AudioPlayer({
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
         onEnded={() => {
+          const audio = audioRef.current;
+          track({ type: "complete", trackId: title, progress: audio ? listenProgress(audio) || 1 : 1 });
           setPlaying(false);
           setCurrent(0);
         }}
@@ -175,7 +191,11 @@ export default function AudioPlayer({
             type="button"
             className="grid h-[1.4rem] w-[1.9rem] place-items-center border-0 bg-transparent p-[0.2rem] text-white outline-none focus-visible:rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70"
             aria-label={`Back ${SKIP_SECONDS} seconds`}
-            onClick={() => seekTo(current - SKIP_SECONDS)}
+            onClick={() => {
+              seekTo(current - SKIP_SECONDS);
+              const audio = audioRef.current;
+              track({ type: "prev", trackId: title, progress: audio ? listenProgress(audio) : undefined });
+            }}
             whileHover={{ scale: 1.12 }}
             whileTap={{ scale: 0.86 }}
             transition={snappy}
@@ -222,7 +242,11 @@ export default function AudioPlayer({
             type="button"
             className="grid h-[1.4rem] w-[1.9rem] place-items-center border-0 bg-transparent p-[0.2rem] text-white outline-none focus-visible:rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70"
             aria-label={`Forward ${SKIP_SECONDS} seconds`}
-            onClick={() => seekTo(current + SKIP_SECONDS)}
+            onClick={() => {
+              seekTo(current + SKIP_SECONDS);
+              const audio = audioRef.current;
+              track({ type: "next", trackId: title, progress: audio ? listenProgress(audio) : undefined });
+            }}
             whileHover={{ scale: 1.12 }}
             whileTap={{ scale: 0.86 }}
             transition={snappy}

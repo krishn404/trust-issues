@@ -1,6 +1,7 @@
+import AnalyticsTracker from "./components/AnalyticsTracker";
+import AudioPlayer from "./components/AudioPlayer";
 import CharacterScene, { type SceneSettings } from "./components/CharacterScene";
 import GradientBackground from "./components/GradientBackground";
-import AudioPlayer from "./components/AudioPlayer";
 
 const sceneSettings: SceneSettings = {
   motionSpeed: 0.35,
@@ -29,6 +30,7 @@ export default function Home() {
       className="relative isolate h-dvh w-screen overflow-hidden [--frame:clamp(4px,0.45vw,8px)] after:pointer-events-none after:absolute after:inset-0 after:z-[2] after:[border-width:var(--frame)] after:border-solid after:border-[#d5feff] after:content-['']"
       aria-label="Interactive Trust Issues scene"
     >
+      <AnalyticsTracker />
       <GradientBackground />
       <CharacterScene settings={sceneSettings} />
       <AudioPlayer />

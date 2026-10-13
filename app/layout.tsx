@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import ConvexClientProvider from "./components/ConvexClientProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -9,7 +10,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className="overflow-hidden font-[Arial,Helvetica,sans-serif]">{children}</body>
+      <body className="overflow-hidden font-[Arial,Helvetica,sans-serif]">
+        <ConvexClientProvider>{children}</ConvexClientProvider>
+      </body>
     </html>
   );
 }
