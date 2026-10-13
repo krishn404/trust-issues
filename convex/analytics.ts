@@ -56,7 +56,8 @@ export const recordEvents = mutation({
   },
   handler: async (ctx, args) => {
     if (!authorized(args.secret)) throw new Error("Unauthorized");
-    if (args.events.length === 0 || args.events.length > 20) return null;
+    if (args.events.length > 20) return null;
+    if (args.events.length === 0 && !args.city && !args.region && !args.country) return null;
 
     const now = Date.now();
     let visitor = await ctx.db

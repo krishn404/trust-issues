@@ -32,6 +32,37 @@ function cleanProgress(value: unknown) {
   return Math.round(Math.min(1, Math.max(0, value)) * 1000) / 1000;
 }
 
+function isPublicIp(ip: string) {
+  if (!ip || ip === "::1" || ip === "127.0.0.1") return false;
+  if (ip.startsWith("10.") || ip.startsWith("192.168.") || ip.startsWith("127.")) return false;
+  const [first, second] = ip.split(".").map(Number);
+  if (first === 172 && second >= 16 && second <= 31) return false;
+  return true;
+}
+
+async function placeFromIp(ip: string) {
+  if (!isPublicIp(ip)) return null;
+  const response = await fetch(`https://ipwho.is/${encodeURIComponent(ip)}`, {
+    headers: { Accept: "application/json", "User-Agent": "TrustIssuesAnalytics/1.0" },
+    signal: AbortSignal.timeout(4000),
+  });
+  if (!response.ok) return null;
+
+  const data = (await response.json()) as {
+    success?: boolean;
+    city?: string;
+    region?: string;
+    country_code?: string;
+  };
+  if (!data.success) return null;
+  const country = data.country_code?.toUpperCase();
+  return {
+    ...(data.city ? { city: data.city.slice(0, 80) } : {}),
+    ...(data.region ? { region: data.region.slice(0, 80) } : {}),
+    ...(country ? { country } : {}),
+  };
+}
+
 export async function POST(request: Request) {
   const userAgent = request.headers.get("user-agent") ?? "";
   if (BOT.test(userAgent)) return new NextResponse(null, { status: 204 });
@@ -91,9 +122,10 @@ export async function POST(request: Request) {
   const ipHash = ip ? createHash("sha256").update(`${salt}:${ip}`).digest("hex") : "";
 
   try {
-    const country = geo(request.headers, "x-vercel-ip-country");
-    const city = geo(request.headers, "x-vercel-ip-city");
-    const region = geo(request.headers, "x-vercel-ip-country-region");
+    const precise = await placeFromIp(ip);
+    const country = precise?.country || geo(request.headers, "x-vercel-ip-country");
+    const city = precise?.city || geo(request.headers, "x-vercel-ip-city");
+    const region = precise?.region || geo(request.headers, "x-vercel-ip-country-region");
     await getConvex().mutation(api.analytics.recordEvents, {
       secret,
       visitorId: payload.visitorId,

@@ -68,6 +68,19 @@ function cleanProgress(progress: number | undefined) {
   return Math.round(Math.min(1, Math.max(0, progress)) * 1000) / 1000;
 }
 
+function sendPayload(body: string) {
+  const blob = new Blob([body], { type: "application/json" });
+  const sent = typeof navigator.sendBeacon === "function" && navigator.sendBeacon("/api/track", blob);
+  if (!sent) {
+    void fetch("/api/track", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      keepalive: true,
+    }).catch(() => {});
+  }
+}
+
 function flush() {
   if (timer) {
     clearTimeout(timer);
@@ -81,18 +94,7 @@ function flush() {
   const visitorId = ensureId(localStorage, VISITOR_KEY);
   const sessionId = ensureId(sessionStorage, SESSION_KEY);
   while (queue.length) {
-    const events = queue.splice(0, 20);
-    const body = JSON.stringify({ visitorId, sessionId, events });
-    const blob = new Blob([body], { type: "application/json" });
-    const sent = typeof navigator.sendBeacon === "function" && navigator.sendBeacon("/api/track", blob);
-    if (!sent) {
-      void fetch("/api/track", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body,
-        keepalive: true,
-      }).catch(() => {});
-    }
+    sendPayload(JSON.stringify({ visitorId, sessionId, events: queue.splice(0, 20) }));
   }
 }
 
