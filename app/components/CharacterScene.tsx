@@ -3,7 +3,7 @@
 import { Center, Environment, Float, OrbitControls, PerspectiveCamera, useGLTF } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useEffect, useRef, type MutableRefObject } from "react";
-import { MathUtils, type Group, type Mesh, type MeshStandardMaterial } from "three";
+import { ACESFilmicToneMapping, MathUtils, SRGBColorSpace, type Group, type Mesh, type MeshStandardMaterial, type Texture } from "three";
 
 const RESUME_DELAY_MS = 10_000;
 const DRAG_PX = 6;
@@ -205,10 +205,16 @@ function Character({
         .filter((material): material is MeshStandardMaterial => (material as MeshStandardMaterial).isMeshStandardMaterial)
         .forEach((standardMaterial) => {
           sceneMaterials.push(standardMaterial);
-        standardMaterial.color.set("#d5feff");
-        standardMaterial.emissive.set("#43779c");
-        standardMaterial.envMapIntensity = 0.28;
-        standardMaterial.needsUpdate = true;
+          for (const texture of [standardMaterial.map, standardMaterial.emissiveMap]) {
+            if (!texture) continue;
+            const map = texture as Texture;
+            map.colorSpace = SRGBColorSpace;
+            map.needsUpdate = true;
+          }
+          standardMaterial.color.set("#d5feff");
+          standardMaterial.emissive.set("#43779c");
+          standardMaterial.envMapIntensity = 0.28;
+          standardMaterial.needsUpdate = true;
         });
     });
     materials.current = sceneMaterials;
@@ -303,7 +309,19 @@ export default function CharacterScene({ settings }: { settings: SceneSettings }
       className="!absolute !inset-0 z-[1] touch-none"
       style={{ mixBlendMode: settings.lightBlendMode }}
       dpr={[1, 2]}
-      gl={{ antialias: true, alpha: true, toneMappingExposure: settings.cinematicExposure }}
+      gl={{
+        antialias: true,
+        alpha: true,
+        premultipliedAlpha: false,
+        toneMapping: ACESFilmicToneMapping,
+        outputColorSpace: SRGBColorSpace,
+        toneMappingExposure: settings.cinematicExposure,
+      }}
+      onCreated={({ gl }) => {
+        gl.outputColorSpace = SRGBColorSpace;
+        gl.toneMapping = ACESFilmicToneMapping;
+        gl.setClearColor(0x000000, 0);
+      }}
       shadows={settings.shadows}
       aria-label="Interactive 3D Trust Issues"
     >
