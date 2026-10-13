@@ -8,6 +8,12 @@ import { ACESFilmicToneMapping, MathUtils, SRGBColorSpace, type Group, type Mesh
 const RESUME_DELAY_MS = 10_000;
 const DRAG_PX = 6;
 
+/** Starting orientation in degrees. Auto-rotate continues from y. */
+export const INITIAL_ROTATION = { x: 8, y: 314, z: -11 };
+
+const CAMERA_FOV = 35;
+const CAMERA_POSITION: [number, number, number] = [0, 0.7, 5.1];
+
 type Gesture = { x: number; y: number; dragged: boolean; zoom: boolean };
 
 function useAutoRotatePause(paused: MutableRefObject<boolean>) {
@@ -189,7 +195,7 @@ function Character({
 }) {
   const group = useRef<Group>(null);
   const materials = useRef<MeshStandardMaterial[]>([]);
-  const spin = useRef(MathUtils.degToRad(settings.rotationAngle));
+  const spin = useRef(MathUtils.degToRad(INITIAL_ROTATION.y));
   const { scene } = useGLTF("/models/clay-character.glb");
 
   useEffect(() => {
@@ -223,9 +229,9 @@ function Character({
   useFrame((state, delta) => {
     if (!group.current) return;
     if (!autoRotatePaused.current) spin.current += delta * settings.motionSpeed;
+    group.current.rotation.x = MathUtils.degToRad(INITIAL_ROTATION.x);
     group.current.rotation.y = spin.current;
-    group.current.rotation.x = MathUtils.degToRad(settings.tiltX);
-    group.current.rotation.z = MathUtils.degToRad(settings.tiltZ);
+    group.current.rotation.z = MathUtils.degToRad(INITIAL_ROTATION.z);
     materials.current.forEach((material) => {
       material.roughness = 0.58 - settings.surfaceSheen * 0.3;
       material.metalness = 0.04 + settings.surfaceSheen * 0.2;
@@ -235,7 +241,11 @@ function Character({
 
   return (
     <Float speed={1.25} rotationIntensity={0.08} floatIntensity={0.22}>
-      <group ref={group} position={[settings.modelX, settings.modelY, settings.modelZ]}>
+      <group
+        ref={group}
+        position={[settings.modelX, settings.modelY, settings.modelZ]}
+        rotation={[MathUtils.degToRad(INITIAL_ROTATION.x), MathUtils.degToRad(INITIAL_ROTATION.y), MathUtils.degToRad(INITIAL_ROTATION.z)]}
+      >
         <Center>
           <primitive object={scene} scale={1.1} />
         </Center>
@@ -283,7 +293,7 @@ function SceneContents({ settings }: { settings: SceneSettings }) {
 
   return (
     <>
-      <PerspectiveCamera makeDefault position={[0, 0.7, 5.1]} fov={35} />
+      <PerspectiveCamera makeDefault position={CAMERA_POSITION} fov={CAMERA_FOV} />
       <ambientLight color="#8bbfd7" intensity={0.58} />
       <Suspense fallback={<LoadingFallback />}>
         <Character settings={settings} autoRotatePaused={autoRotatePaused} />

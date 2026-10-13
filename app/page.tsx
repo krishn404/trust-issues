@@ -1,11 +1,11 @@
 import AnalyticsTracker from "./components/AnalyticsTracker";
 import AudioPlayer from "./components/AudioPlayer";
-import CharacterScene, { type SceneSettings } from "./components/CharacterScene";
+import CharacterScene, { INITIAL_ROTATION, type SceneSettings } from "./components/CharacterScene";
 import GradientBackground from "./components/GradientBackground";
 
 const sceneSettings: SceneSettings = {
   motionSpeed: 0.35,
-  rotationAngle: 7,
+  rotationAngle: INITIAL_ROTATION.y,
   keyLight: 6,
   fillLight: 4,
   environmentLight: 1.45,
@@ -20,8 +20,8 @@ const sceneSettings: SceneSettings = {
   modelX: 0,
   modelY: 0,
   modelZ: 0,
-  tiltX: 7,
-  tiltZ: -12,
+  tiltX: INITIAL_ROTATION.x,
+  tiltZ: INITIAL_ROTATION.z,
 };
 
 export default function Home() {
