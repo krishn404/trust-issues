@@ -1,9 +1,163 @@
 "use client";
 
 import { Center, Environment, Float, OrbitControls, PerspectiveCamera, useGLTF } from "@react-three/drei";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { Suspense, useEffect, useRef } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Suspense, useEffect, useRef, type MutableRefObject } from "react";
 import { MathUtils, type Group, type Mesh, type MeshStandardMaterial } from "three";
+
+const RESUME_DELAY_MS = 10_000;
+const DRAG_PX = 6;
+
+type Gesture = { x: number; y: number; dragged: boolean; zoom: boolean };
+
+function useAutoRotatePause(paused: MutableRefObject<boolean>) {
+  const gl = useThree((state) => state.gl);
+  const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const zoomUntil = useRef(0);
+  const pointers = useRef(new Map<number, Gesture>());
+  const touches = useRef(new Map<number, Gesture>());
+
+  useEffect(() => {
+    const el = gl.domElement;
+    const dragStillHeld = () => {
+      for (const gesture of pointers.current.values()) if (gesture.dragged && !gesture.zoom) return true;
+      for (const gesture of touches.current.values()) if (gesture.dragged && !gesture.zoom) return true;
+      return false;
+    };
+
+    const clearResume = () => {
+      if (resumeTimer.current !== null) {
+        clearTimeout(resumeTimer.current);
+        resumeTimer.current = null;
+      }
+    };
+
+    const pause = () => {
+      paused.current = true;
+      clearResume();
+    };
+
+    const scheduleResume = () => {
+      clearResume();
+      resumeTimer.current = setTimeout(() => {
+        resumeTimer.current = null;
+        if (dragStillHeld()) return;
+        paused.current = false;
+      }, RESUME_DELAY_MS);
+    };
+
+    const noteMove = (gesture: Gesture, x: number, y: number) => {
+      if (gesture.zoom) return;
+      if (gesture.dragged) {
+        pause();
+        return;
+      }
+      const dx = x - gesture.x;
+      const dy = y - gesture.y;
+      if (dx * dx + dy * dy < DRAG_PX * DRAG_PX) return;
+      gesture.dragged = true;
+      pause();
+    };
+
+    const markZoom = () => {
+      zoomUntil.current = performance.now() + 250;
+      for (const gesture of pointers.current.values()) {
+        gesture.zoom = true;
+        gesture.dragged = false;
+      }
+      for (const gesture of touches.current.values()) {
+        gesture.zoom = true;
+        gesture.dragged = false;
+      }
+      if (resumeTimer.current === null) paused.current = false;
+    };
+
+    const isZooming = () => performance.now() < zoomUntil.current;
+
+    const finishGesture = (dragged: boolean) => {
+      if (!dragged) return;
+      if (dragStillHeld()) {
+        pause();
+        return;
+      }
+      paused.current = true;
+      scheduleResume();
+    };
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.pointerType === "mouse" && event.button !== 0) return;
+      pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY, dragged: false, zoom: isZooming() });
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      const gesture = pointers.current.get(event.pointerId);
+      if (!gesture) return;
+      noteMove(gesture, event.clientX, event.clientY);
+    };
+
+    const onPointerUp = (event: PointerEvent) => {
+      const gesture = pointers.current.get(event.pointerId);
+      if (!gesture) return;
+      pointers.current.delete(event.pointerId);
+      finishGesture(gesture.dragged);
+    };
+
+    const onWheel = () => {
+      markZoom();
+    };
+
+    const onTouchStart = (event: TouchEvent) => {
+      if (event.touches.length >= 2) {
+        markZoom();
+        return;
+      }
+      for (const touch of Array.from(event.changedTouches)) {
+        touches.current.set(touch.identifier, { x: touch.clientX, y: touch.clientY, dragged: false, zoom: isZooming() });
+      }
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      for (const touch of Array.from(event.changedTouches)) {
+        const gesture = touches.current.get(touch.identifier);
+        if (gesture) noteMove(gesture, touch.clientX, touch.clientY);
+      }
+    };
+
+    const onTouchEnd = (event: TouchEvent) => {
+      for (const touch of Array.from(event.changedTouches)) {
+        const gesture = touches.current.get(touch.identifier);
+        if (!gesture) continue;
+        touches.current.delete(touch.identifier);
+        finishGesture(gesture.dragged);
+      }
+    };
+
+    el.addEventListener("pointerdown", onPointerDown);
+    el.addEventListener("wheel", onWheel, { passive: true });
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerUp);
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    window.addEventListener("touchend", onTouchEnd);
+    window.addEventListener("touchcancel", onTouchEnd);
+
+    return () => {
+      el.removeEventListener("pointerdown", onPointerDown);
+      el.removeEventListener("wheel", onWheel);
+      el.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("touchcancel", onTouchEnd);
+      clearResume();
+      pointers.current.clear();
+      touches.current.clear();
+    };
+  }, [gl, paused]);
+}
 
 export type SceneSettings = {
   motionSpeed: number;
@@ -26,9 +180,16 @@ export type SceneSettings = {
   tiltZ: number;
 };
 
-function Character({ settings }: { settings: SceneSettings }) {
+function Character({
+  settings,
+  autoRotatePaused,
+}: {
+  settings: SceneSettings;
+  autoRotatePaused: MutableRefObject<boolean>;
+}) {
   const group = useRef<Group>(null);
   const materials = useRef<MeshStandardMaterial[]>([]);
+  const spin = useRef(MathUtils.degToRad(settings.rotationAngle));
   const { scene } = useGLTF("/models/clay-character.glb");
 
   useEffect(() => {
@@ -53,9 +214,10 @@ function Character({ settings }: { settings: SceneSettings }) {
     materials.current = sceneMaterials;
   }, [scene]);
 
-  useFrame((state) => {
+  useFrame((state, delta) => {
     if (!group.current) return;
-    group.current.rotation.y = (state.clock.elapsedTime * settings.motionSpeed) + MathUtils.degToRad(settings.rotationAngle);
+    if (!autoRotatePaused.current) spin.current += delta * settings.motionSpeed;
+    group.current.rotation.y = spin.current;
     group.current.rotation.x = MathUtils.degToRad(settings.tiltX);
     group.current.rotation.z = MathUtils.degToRad(settings.tiltZ);
     materials.current.forEach((material) => {
@@ -109,20 +271,16 @@ function LoadingFallback() {
   return null;
 }
 
-export default function CharacterScene({ settings }: { settings: SceneSettings }) {
+function SceneContents({ settings }: { settings: SceneSettings }) {
+  const autoRotatePaused = useRef(false);
+  useAutoRotatePause(autoRotatePaused);
+
   return (
-    <Canvas
-      className="!absolute !inset-0 z-[1] touch-none"
-      style={{ mixBlendMode: settings.lightBlendMode }}
-      dpr={[1, 2]}
-      gl={{ antialias: true, alpha: true, toneMappingExposure: settings.cinematicExposure }}
-      shadows={settings.shadows}
-      aria-label="Interactive 3D Trust Issues"
-    >
+    <>
       <PerspectiveCamera makeDefault position={[0, 0.7, 5.1]} fov={35} />
       <ambientLight color="#8bbfd7" intensity={0.58} />
       <Suspense fallback={<LoadingFallback />}>
-        <Character settings={settings} />
+        <Character settings={settings} autoRotatePaused={autoRotatePaused} />
         <CinematicModelLights settings={settings} />
         <Environment preset="city" environmentIntensity={settings.environmentLight * 0.7} />
       </Suspense>
@@ -135,6 +293,21 @@ export default function CharacterScene({ settings }: { settings: SceneSettings }
         rotateSpeed={0.65}
         zoomSpeed={0.7}
       />
+    </>
+  );
+}
+
+export default function CharacterScene({ settings }: { settings: SceneSettings }) {
+  return (
+    <Canvas
+      className="!absolute !inset-0 z-[1] touch-none"
+      style={{ mixBlendMode: settings.lightBlendMode }}
+      dpr={[1, 2]}
+      gl={{ antialias: true, alpha: true, toneMappingExposure: settings.cinematicExposure }}
+      shadows={settings.shadows}
+      aria-label="Interactive 3D Trust Issues"
+    >
+      <SceneContents settings={settings} />
     </Canvas>
   );
 }
